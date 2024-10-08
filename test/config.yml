@@ -1,0 +1,12 @@
+server_name: 测试
+
+app:
+  name: ${NAME:scnjl}
+  age: 44
+  addresses:
+    - 青羊区
+    - ${ADDRESS:金牛区}
+  old: false
+  weight: 67.5 
+  server:
+    port: ${PORT:8080}
