@@ -1,8 +1,9 @@
 package test
 
 import (
-	"goutil/env"
 	"testing"
+
+	"github.com/kbrownehs18/goutil/env"
 )
 
 type Config struct {
