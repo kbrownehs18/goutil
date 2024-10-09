@@ -55,7 +55,7 @@ func Error(params ...interface{}) *Result {
 		var message string
 		if data, ok := params[0].(int); ok {
 			code = data
-		} else if data, ok := params[0].(MessageCode); ok {
+		} else if data, ok := params[0].(*MessageCode); ok {
 			code = data.Code
 			message = data.Message
 		}
