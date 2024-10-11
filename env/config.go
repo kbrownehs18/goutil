@@ -2,8 +2,8 @@ package env
 
 import (
 	"fmt"
+	f "github.com/kbrownehs18/goutil/file"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -14,62 +14,59 @@ func InitConfig[T any](config *T, path ...string) {
 	configType := "yaml" // 暂时只支持yaml
 	configPath := "."
 
+	fileInfo := f.Info{Path: configPath, Type: configType, Name: configName}
+
 	if len(path) > 0 {
-		configPath = filepath.Dir(path[0])
-		configName = filepath.Base(path[0])
-		fileExt := filepath.Ext(configName)
-		configName = strings.TrimSuffix(configName, fileExt)
+		fileInfo = f.ParseFilePath(path[0])
 	}
 
-	viper.AddConfigPath(configPath)
-	viper.SetConfigType(configType)
-	viper.SetConfigName(configName)
+	v := NewViper(fileInfo)
 
 	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("init config error: %v %s", config, err))
 	}
 
 	// 替换占位符
-	replacePlaceholders()
+	replacePlaceholders(v)
 
-	if err := viper.Unmarshal(config); err != nil {
+	if err := v.Unmarshal(config); err != nil {
 		panic(fmt.Errorf("unable to decode into struct: %v %s", config, err))
 	}
 }
 
 // replacePlaceholders 用于替换配置文件中的 ${VAR:DEFAULT} 占位符
-func replacePlaceholders() {
-	settings := viper.AllSettings()
-	replacePlaceholdersRecursive(settings, "")
+func replacePlaceholders(v *viper.Viper) {
+	settings := v.AllSettings()
+	replacePlaceholdersRecursive(v, settings, "")
 }
 
-func replacePlaceholdersRecursive(settings map[string]interface{}, parentKey string) {
+func replacePlaceholdersRecursive(v *viper.Viper, settings map[string]interface{}, parentKey string) {
 	for key, value := range settings {
 		fullKey := key
 		if parentKey != "" {
 			fullKey = parentKey + "." + key
 		}
 
-		switch v := value.(type) {
+		switch val := value.(type) {
 		case string:
 			// 对字符串类型进行占位符替换
-			viper.Set(fullKey, parseEnvPlaceholder(v))
+			v.Set(fullKey, parseEnvPlaceholder(val))
 		case map[string]interface{}:
 			// 递归处理嵌套的 map
-			replacePlaceholdersRecursive(v, fullKey)
+			replacePlaceholdersRecursive(v, val, fullKey)
 		case []interface{}:
 			// 处理列表类型
-			for i, elem := range v {
+			for i, elem := range val {
 				elemKey := fmt.Sprintf("%s[%d]", fullKey, i)
 				if elemMap, ok := elem.(map[string]interface{}); ok {
 					// 如果列表中的元素是 map，则递归处理
-					replacePlaceholdersRecursive(elemMap, elemKey)
+					replacePlaceholdersRecursive(v, elemMap, elemKey)
 				} else if elemStr, ok := elem.(string); ok {
 					// 如果列表中的元素是字符串，则替换占位符
-					v[i] = parseEnvPlaceholder(elemStr)
+					val[i] = parseEnvPlaceholder(elemStr)
 				}
 			}
-			viper.Set(fullKey, v) // 更新替换后的列表
+			viper.Set(fullKey, val) // 更新替换后的列表
 		default:
 			// 其他类型（如 int, bool, float 等）不做处理
 			viper.Set(fullKey, value)
@@ -95,4 +92,19 @@ func parseEnvPlaceholder(value string) string {
 	}
 
 	return value
+}
+
+func NewViperFromPath(path string) *viper.Viper {
+	fileInfo := f.ParseFilePath(path)
+	return NewViper(fileInfo)
+}
+
+func NewViper(fileInfo f.Info) *viper.Viper {
+	v := new(viper.Viper)
+
+	v.AddConfigPath(fileInfo.Path)
+	v.SetConfigType(fileInfo.Type)
+	v.SetConfigName(fileInfo.Name)
+
+	return v
 }
