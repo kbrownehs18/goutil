@@ -100,7 +100,7 @@ func NewViperFromPath(path string) *viper.Viper {
 }
 
 func NewViper(fileInfo f.Info) *viper.Viper {
-	v := new(viper.Viper)
+	v := viper.New()
 
 	v.AddConfigPath(fileInfo.Path)
 	v.SetConfigType(fileInfo.Type)
