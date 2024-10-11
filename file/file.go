@@ -17,6 +17,7 @@ func ParseFilePath(path string) Info {
 	configName := filepath.Base(path)
 	fileExt := filepath.Ext(configName)
 	configName = strings.TrimSuffix(configName, fileExt)
+	configType := strings.TrimPrefix(fileExt, ".")
 
-	return Info{configPath, fileExt, configName}
+	return Info{configPath, configType, configName}
 }
