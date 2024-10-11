@@ -3,10 +3,9 @@ package env
 import (
 	"fmt"
 	f "github.com/kbrownehs18/goutil/file"
+	"github.com/spf13/viper"
 	"os"
 	"strings"
-
-	"github.com/spf13/viper"
 )
 
 func InitConfig[T any](config *T, path ...string) {
@@ -22,7 +21,7 @@ func InitConfig[T any](config *T, path ...string) {
 
 	v := NewViper(fileInfo)
 
-	if err := viper.ReadInConfig(); err != nil {
+	if err := v.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("init config error: %v %s", config, err))
 	}
 
@@ -66,10 +65,10 @@ func replacePlaceholdersRecursive(v *viper.Viper, settings map[string]interface{
 					val[i] = parseEnvPlaceholder(elemStr)
 				}
 			}
-			viper.Set(fullKey, val) // 更新替换后的列表
+			v.Set(fullKey, val) // 更新替换后的列表
 		default:
 			// 其他类型（如 int, bool, float 等）不做处理
-			viper.Set(fullKey, value)
+			v.Set(fullKey, value)
 		}
 	}
 }
