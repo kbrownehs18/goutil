@@ -19,16 +19,15 @@ func InitConfig[T any](config *T, path ...string) {
 		fileInfo = f.ParseFilePath(path[0])
 	}
 
-	v := NewViper(fileInfo)
-
-	if err := v.ReadInConfig(); err != nil {
+	v, err := NewViper(fileInfo)
+	if err != nil {
 		panic(fmt.Errorf("init config error: %v %s", config, err))
 	}
 
 	// 替换占位符
 	replacePlaceholders(v)
 
-	if err := v.Unmarshal(config); err != nil {
+	if err = v.Unmarshal(config); err != nil {
 		panic(fmt.Errorf("unable to decode into struct: %v %s", config, err))
 	}
 }
@@ -93,17 +92,21 @@ func parseEnvPlaceholder(value string) string {
 	return value
 }
 
-func NewViperFromPath(path string) *viper.Viper {
+func NewViperFromPath(path string) (*viper.Viper, error) {
 	fileInfo := f.ParseFilePath(path)
 	return NewViper(fileInfo)
 }
 
-func NewViper(fileInfo f.Info) *viper.Viper {
+func NewViper(fileInfo f.Info) (*viper.Viper, error) {
 	v := viper.New()
 
 	v.AddConfigPath(fileInfo.Path)
 	v.SetConfigType(fileInfo.Type)
 	v.SetConfigName(fileInfo.Name)
 
-	return v
+	if err := v.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	return v, nil
 }
