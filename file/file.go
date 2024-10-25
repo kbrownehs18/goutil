@@ -1,6 +1,7 @@
 package file
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -20,4 +21,13 @@ func ParseFilePath(path string) Info {
 	configType := strings.TrimPrefix(fileExt, ".")
 
 	return Info{configPath, configType, configName}
+}
+
+// FileExists 判断是否存在文件
+func FileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return false // 文件不存在
+	}
+	return err == nil // 文件存在
 }
